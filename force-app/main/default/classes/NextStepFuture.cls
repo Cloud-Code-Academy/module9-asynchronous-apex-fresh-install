@@ -27,9 +27,30 @@ public with sharing class NextStepFuture {
      * Opportunity Next Step field is a standard field
      * Update the corresponding test class AsynchronousTest and test method nextStepFuture_testUpdateAllNextStep to cover test this method
      */
-    //[public | private ] [static] data_type method_name (input parameters) {
-    //  The body of the method
-    //}
+
+    @future
+    public static void updateNextStep(){
+
+        // Create empty lists to hold the records to update
+        List<Account> accList = new List<Account>();
+        List<Opportunity> oppList = new List<Opportunity>();
+
+        // Update all Next Step values and add the record to a list
+        for (Account a : [SELECT Id, Name, Next_Step__c FROM Account]) {
+            a.Next_Step__c = 'Meeting in the future';
+            accList.add(a);
+        }
+        for (Opportunity opp : [SELECT Id, Name, NextStep FROM Opportunity]) {
+            opp.NextStep = 'Meeting in the future';
+            oppList.add(opp);
+        }
+
+        // Update the records
+        update accList;
+        update oppList;
+    }
+
+
 
     /*
     * Question 2
@@ -38,25 +59,34 @@ public with sharing class NextStepFuture {
     * Update the corresponding test class AsynchronousTest and test method nextStepFuture_testCreateDealAndUpdateRole to cover test this method
     */
     //Mix DML Error happens when you try to perform DML operations on setup and non-setup objects in a single transaction.
+
     public static void createDealAndUpdateRole() {
-        Opportunity bigDeal = new Opportunity();
-        insertBigDeal(bigDeal);
+
+        insertBigDeal();
 
         UserRole[] roles = [SELECT Id, Name FROM UserRole WHERE Id = :UserInfo.getUserRoleId() OR Name = 'CRO' LIMIT 1];
         updateUserRoleName(roles);
     }
 
     // Helper method to insert big deal
-    private static void insertBigDeal(Opportunity opp) {
+    @future
+    private static void insertBigDeal() {
+
+        Opportunity opp = new Opportunity();
         opp.Amount = 1000000;
         opp.Name = 'Big Deal';
         opp.StageName = 'Closed Won'; 
         opp.CloseDate = Date.today();
         
         insert opp;
+
+
+        // Find a way to make this strings
+
+        
+        // make the below one @future as well for practice
+
     }
-
-
     // Helper method to update role name
     private static void updateUserRoleName(UserRole[] roles){
         UserRole role;
@@ -64,7 +94,11 @@ public with sharing class NextStepFuture {
             role = new UserRole();
             role.portalType = 'None'; 
             role.CaseAccessForAccountOwner = 'Edit'; 
-            // role.OpportunityAccessForAccountOwner = 'Edit'; //This may need to be uncommented depending on your orgs Organization Wide Defaults(OWD) settings. If you are receiving FIELD_INTEGRITY_EXCEPTION, field integrity exception: unknown (Opportunity access level below organization default): [unknown], uncomment this line.
+            //role.OpportunityAccessForAccountOwner = 'Edit'; // This may need to be uncommented depending on your orgs 
+                                                            // Organization Wide Defaults(OWD) settings. If you are receiving 
+                                                            // FIELD_INTEGRITY_EXCEPTION, field integrity exception: unknown 
+                                                            // (Opportunity access level below organization default): [unknown], 
+                                                            // uncomment this line.
         } else {
             role = roles[0];
         }
