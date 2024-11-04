@@ -17,27 +17,74 @@
  * 
  * Note: The class below contains placeholders for implementing a queueable job to update accounts and opportunities.
  */
-public with sharing class NextStepQueueable {
+public with sharing class NextStepQueueable implements Queueable {
 
     // Member variable to store the accounts
     private Map<Id,Account> accounts;
 
     // Constructor to accept the accounts
     public NextStepQueueable(Map<Id,Account> accounts) {
+
         // Store the accounts in a member variable
+        this.accounts = accounts;
     }
 
     // Method to queue the job
     public static void enqueueJob() {
+
+        //  Create a Map of Accounts to pass to the constructor
+        Map<Id, Account> accMap = new Map<Id,Account>();
+        
         // Get 10 accounts with Next Step populated
+        List<Account> accs = new List<Account>([SELECT Id, Next_Step__c FROM Account WHERE Next_Step__c != NULL LIMIT 10]);
 
         // If there are any accounts, queue the job using System.enqueueJob
+        for (Account acc : accs) {
+            accMap.put(acc.Id, acc);   // for every acc that populates the list, put it in the above map
+        }
+
+        //google how to make new instances for Apex CLass
+        //Coding w/ Force Instantiate a Class
+
+
+
+        // help explain this        &&&&&&
+        // If there are accounts in the Map, queue the job using System.enqueueJob
+        if (!accMap.isEmpty()) {
+            System.enqueueJob(new NextStepQueueable(accMap));
+        }
     }
 
-    /*
-     * Update/Uncomment the template code to create a method
-     * Method to execute the queueable job
-     */
+   
+    //Method to execute the queueable job
+     
+
+    public void execute(QueueableContext context) {
+        for (Account acc : accounts.values()) {
+            makeNextStepNull(acc);
+        }
+        update accounts.values();
+        
+        List<Opportunity> oppyList = [SELECT Id, Name, NextStep FROM Opportunity WHERE AccountId IN : accounts.keySet()];
+        for (Opportunity opp : oppyList) {
+            makeNextStepNull(opp);
+        }
+        update oppyList;
+
+        enqueueJob();
+        
+    }
+    
+    private static void makeNextStepNull(Account acc){
+        acc.Next_Step__c = null;
+    }
+    private static void makeNextStepNull(Opportunity opp){
+        opp.NextStep = null;
+    }
+
+/*
+
+
     //[public | private ] [static] data_type execute (input parameters) {
         // Get the accounts from the member variable
 
@@ -64,5 +111,7 @@ public with sharing class NextStepQueueable {
     // Overloaded method to accept an account
     private static void removeNextStep(Account acc) {
         acc.Next_Step__c = null;
-    }
+    
+*/
 }
+ 
